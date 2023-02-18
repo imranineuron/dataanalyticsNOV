@@ -95,3 +95,49 @@ SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS;
 
 
 list @aws_stage;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_EX(
+ORDER_ID VARCHAR(30),
+AMOUNT INT
+);
+
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS_EX;
+
+
+
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+  FROM (select s.$1, s.$2 from @MANAGE_DB.EXTERNAL_STAGES.aws_stage s)
+  FILE_FORMAT= (type = csv field_delimiter=',' skip_header=1)
+  files=('OrderDetails.csv');
+
+
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_EX(
+ORDER_ID VARCHAR(30),
+AMOUNT INT,
+PROFIT INT,
+PROFITABLE_FLAG VARCHAR(30)
+);
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS_EX;
+
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+  FROM (select 
+        s.$1,
+        s.$2,
+        s.$3,
+        CASE WHEN CAST(s.$3 as int) < 0 THEN 'not profitable' ELSE 'profitable' END
+        from @MANAGE_DB.EXTERNAL_STAGES.aws_stage s)
+  FILE_FORMAT= (type = csv field_delimiter=',' skip_header=1)
+  files=('OrderDetails.csv');
