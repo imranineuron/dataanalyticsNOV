@@ -1,0 +1,97 @@
+create database OUR_FIRST_DB;
+
+
+
+
+CREATE TABLE OUR_FIRST_DB.PUBLIC."loan_payment" (
+"loan_id" STRING,
+"loan_status" STRING,
+"principals" STRING,
+"terms" STRING,
+"effective_date" STRING,
+"due_date" STRING,
+"paid_off_time" STRING,
+"past_due_date" STRING,
+"age" STRING,
+"education" STRING,
+"gender" STRING
+);
+
+
+select * from loan_payment;
+
+
+COPY INTO LOAN_PAYMENT
+FROM s3://bucketsnowflakes3/Loan_payments_data.csv 
+file_format = (type= csv
+field_delimiter = ','
+skip_header = 1)
+
+
+
+
+CREATE OR REPLACE DATABASE MANAGE_DB;
+
+CREATE OR REPLACE SCHEMA external_stages;
+
+
+CREATE OR REPLACE STAGE MANAGE_DB.EXTERNAL_STAGES.aws_stage
+url='s3://bucketsnowflakes3'
+credentials=(aws_key_id='ABCD_DUMMY_ID',aws_secret_key='1234abcd_key')
+
+
+DESC STAGE manage_db.external_stages.aws_stage;
+
+
+ALTER STAGE aws_stage
+SET credentials=(aws_key_id='XYZ_DUMMY_ID',aws_secret_key='1234abcd_key')
+
+
+
+CREATE OR REPLACE STAGE MANAGE_DB.EXTERNAL_STAGES.aws_stage
+url='s3://bucketsnowflakes3';
+
+
+
+LIST @aws_stage;
+
+
+
+
+COPY INTO LOAN_PAYMENT
+FROM s3://bucketsnowflakes3/Loan_payments_data.csv 
+file_format = (type= csv
+field_delimiter = ','
+skip_header = 1)
+
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS(
+ORDER_ID VARCHAR(30),
+AMOUNT INT,
+PROFIT INT,
+QUANTITY INT,
+CATEGORY VARCHAR(30),
+SUBCATEGORY VARCHAR(30));
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS;
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+FROM @MANAGE_DB.EXTERNAL_STAGES.aws_stage
+file_format = (type = csv 
+               field_delimiter=','
+               skip_header=1)
+files = ('OrderDetails.csv')
+
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+FROM @MANAGE_DB.EXTERNAL_STAGES.aws_stage
+file_format = (type = csv 
+               field_delimiter=','
+               skip_header=1)
+PATTERN = '.*Order.*' ;
+
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS;
+
+
+list @aws_stage;
