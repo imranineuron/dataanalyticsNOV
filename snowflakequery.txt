@@ -264,3 +264,102 @@ ALTER file format MANAGE_DB.FILE_FORMATS.my_file_format
   
   
   ----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+CREATE OR REPLACE DATABASE COPY_DB;
+
+
+CREATE OR REPLACE TABLE COPY_DB.PUBLIC.ORDERS(
+ORDER_ID VARCHAR(30),
+AMOUNT INT,
+PROFIT INT,
+QUANTITY INT,
+CATEGORY VARCHAR(30),
+SUBCATEGORY VARCHAR(30));
+
+
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+url='s3://snowflakebucket-copyoption/size';
+
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+  FROM @aws_stage_copy
+  file_format=(type=csv field_delimiter=',' skip_header=1)
+  pattern='.*Order.*'
+  VALIDATION_MODE = RETURN_ERRORS
+
+SELECT * FROM COPY_DB.PUBLIC.ORDERS;
+  
+
+
+
+-----USE FILES WITH ERRORS----------------------------------
+
+
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+url='s3://snowflakebucket-copyoption/returnfailed/';
+
+
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+  FROM @aws_stage_copy
+  file_format=(type=csv field_delimiter=',' skip_header=1)
+  pattern='.*Order.*'
+  VALIDATION_MODE = RETURN_ERRORS
+
+  COPY INTO COPY_DB.PUBLIC.ORDERS
+  FROM @aws_stage_copy
+  file_format=(type=csv field_delimiter=',' skip_header=1)
+  pattern='.*Order.*'
+  VALIDATION_MODE = RETURN_1_ROWS
+
+
+  ------WORKING WITH ERROR RESULTS---------------
+
+  //SAVE REJECTED FILES AFTER VALIDATION MODE
+
+CREATE OR REPLACE TABLE COPY_DB.PUBLIC.ORDERS(
+ORDER_ID VARCHAR(30),
+AMOUNT INT,
+PROFIT INT,
+QUANTITY INT,
+CATEGORY VARCHAR(30),
+SUBCATEGORY VARCHAR(30));
+
+
+
+  COPY INTO COPY_DB.PUBLIC.ORDERS
+  FROM @aws_stage_copy
+  file_format=(type=csv field_delimiter=',' skip_header=1)
+  pattern='.*Order.*'
+  VALIDATION_MODE = RETURN_ERRORS;
+
+  CREATE OR REPLACE TABLE rejected AS
+  SELECT rejected_record from table(result_scan(last_query_id()));
+
+  //01aa6dad-3200-a8f9-0002-ff460002a1da
+
+  SELECT * FROM rejected;
+
+
+  CREATE OR REPLACE TABLE rejected_vales as
+  SELECT
+  SPLIT_PART(rejected_record,',',1) as ORDER_ID,
+  SPLIT_PART(rejected_record,',',2) as AMOUNT,
+  SPLIT_PART(rejected_record,',',3) as PROFIT,
+  SPLIT_PART(rejected_record,',',4) as QUANTITY,
+  SPLIT_PART(rejected_record,',',5) as CATEGORY,
+  SPLIT_PART(rejected_record,',',6) as SUBCATEGEORY
+  FROM rejected;
+
+  SELECT * FROM rejected_vales;
+  
+  
+  -----------------------------------------------------------------------------------------------------------------------------
