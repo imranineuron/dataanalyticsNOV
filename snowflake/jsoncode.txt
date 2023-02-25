@@ -19,3 +19,25 @@ COPY INTO OUR_FIRST_DB.PUBLIC.JSON_RAW
  FROM @MANAGE_DB.EXTERNAL_STAGES.JSONSTAGE
  file_format = MANAGE_DB.FILE_FORMATS.JSONFORMAT
  files = ('HR_data.json');
+
+
+
+// Parse and analyse Raw Json
+
+
+SELECT RAW_FILE:city FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT $1:first_name FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT RAW_FILE:first_name::string as first_name FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT RAW_FILE:id::int as id FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+  RAW_FILE:id::int as id,
+  RAW_FILE:first_name::STRING as first_name,
+  RAW_FILE:last_name::STRING as last_name,
+  RAW_FILE:gender::STRING as gender
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
